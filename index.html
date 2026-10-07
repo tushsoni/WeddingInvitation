@@ -452,7 +452,7 @@
 /* ================= Edit your details here ================= */
 const WEDDING = {
   start: "2026-12-04T11:00:00+05:30",
-  music: "",                       // optional: put a song file next to index.html, e.g. "song.mp3". Empty = built-in sitar tune.
+  music: "wedding-tune.mp3",       // song file next to index.html. Empty "" = built-in sitar tune.
   venue: {
     name:    { en: "The Riwaz Resort", hi: "द रिवाज़ रिज़ॉर्ट" },
     address: { en: "Company Garden Rd, Piraka Nagar, Sector 7, Alwar, Rajasthan 301001", hi: "कंपनी गार्डन रोड, पीरका नगर, सेक्टर 7, अलवर, राजस्थान 301001" },
@@ -813,7 +813,7 @@ const T = {
 
   /* ---------- Music: own file, or a generated sitar + tanpura tune in Raag Yaman ---------- */
   const Music = (function () {
-    let ac, master, timer, audioEl, playing = false;
+    let ac, master, timer, audioEl, playing = false, fileFailed = false;
     const SA = 277.18, R = [1, 9/8, 5/4, 45/32, 3/2, 5/3, 15/8, 2, 9/4, 5/2], bufs = {};
     function pluck(freq, len) {
       const key = freq.toFixed(2); if (bufs[key]) return bufs[key];
@@ -831,6 +831,7 @@ const T = {
     ];
     const freqOf = deg => deg >= 0 ? SA * R[deg] : SA * 15 / 16;
     function startSynth() {
+      if (timer) return;
       ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume();
       master = ac.createGain(); master.gain.setValueAtTime(0, ac.currentTime); master.gain.linearRampToValueAtTime(.55, ac.currentTime + 2.5);
       const verb = ac.createConvolver(), len = ac.sampleRate * 2.6, ir = ac.createBuffer(2, len, ac.sampleRate);
@@ -848,13 +849,32 @@ const T = {
         }
       }, 250);
     }
-    function stopSynth() { clearInterval(timer); if (master) { master.gain.cancelScheduledValues(ac.currentTime); master.gain.setValueAtTime(master.gain.value, ac.currentTime); master.gain.linearRampToValueAtTime(0, ac.currentTime + .6); } }
+    function stopSynth() {
+      clearInterval(timer); timer = null;
+      if (master) { const m = master; m.gain.cancelScheduledValues(ac.currentTime); m.gain.setValueAtTime(m.gain.value, ac.currentTime); m.gain.linearRampToValueAtTime(0, ac.currentTime + .6); setTimeout(() => m.disconnect(), 800); master = null; }
+    }
+    const btn = () => { const b = $("music"); b.classList.toggle("on", playing); b.setAttribute("aria-pressed", playing); b.setAttribute("aria-label", playing ? "Pause music" : "Play music"); };
+    // The MP3 failed to load (missing or unsupported file): switch to the built-in tune.
+    const fallback = () => { if (fileFailed) return; fileFailed = true; if (playing) { try { startSynth(); } catch (e) {} } };
     return {
+      // Call from a tap/click: browsers only allow sound to start inside a user gesture.
       toggle(on) {
-        if (on === playing) return; playing = on;
-        if (WEDDING.music) { audioEl = audioEl || Object.assign(new Audio(WEDDING.music), { loop: true, volume: .6 }); on ? audioEl.play().catch(() => {}) : audioEl.pause(); }
-        else { try { on ? startSynth() : stopSynth(); } catch (e) { playing = false; } }
-        $("music").classList.toggle("on", playing); $("music").setAttribute("aria-pressed", playing); $("music").setAttribute("aria-label", playing ? "Pause music" : "Play music");
+        if (on === playing) return; playing = on; btn();
+        if (!on) { if (audioEl) audioEl.pause(); stopSynth(); return; }
+        // Unlock Web Audio now, inside the gesture, so the fallback can still start later.
+        try { ac = ac || new (window.AudioContext || window.webkitAudioContext)(); ac.resume(); } catch (e) {}
+        if (WEDDING.music && !fileFailed) {
+          if (!audioEl) {
+            audioEl = new Audio(); audioEl.loop = true; audioEl.volume = .7; audioEl.preload = "auto";
+            audioEl.addEventListener("error", fallback);
+            audioEl.src = WEDDING.music;
+          }
+          const pr = audioEl.play();
+          if (pr) pr.catch(err => {
+            if (err && err.name === "NotAllowedError") { playing = false; btn(); }   // blocked: guest can tap the music button
+            else if (err && err.name !== "AbortError") fallback();
+          });
+        } else { try { startSynth(); } catch (e) { playing = false; btn(); } }
       },
       get playing() { return playing; }
     };
