@@ -81,11 +81,7 @@
   .tap-hint .ic::after { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--rani); animation: ping 1.8s ease-out infinite; }
   .tap-hint .ic svg { width: 18px; height: 18px; animation: press 1.8s ease-in-out infinite; }
   @keyframes press { 0%,60%,100% { transform: translateY(0); } 30% { transform: translateY(3px) scale(.9); } }
-  .skip { position: absolute; z-index: 6; left: 50%; transform: translateX(-50%); bottom: calc(28px + env(safe-area-inset-bottom, 0px));
-    font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: #6E5A44; background: rgba(255,255,255,.6);
-    border: 1px solid rgba(176,130,50,.4); border-radius: 999px; padding: 8px 18px; cursor: pointer; backdrop-filter: blur(4px); }
-  .skip:focus-visible { outline: 2px solid var(--rani); outline-offset: 3px; }
-  #intro.open .tap-hint, #intro.open .skip, #intro.open .env-to { opacity: 0; transition: opacity .3s; }
+  #intro.open .tap-hint, #intro.open .env-to { opacity: 0; transition: opacity .3s; }
   @keyframes ping { from { transform: scale(.8); opacity: .9; } to { transform: scale(1.6); opacity: 0; } }
 
   /* ---------- Floating controls ---------- */
@@ -95,7 +91,7 @@
   .lang button { border: 0; background: none; cursor: pointer; font-size: 12px; font-weight: 500; color: #5A4A44;
     padding: 5px 11px; border-radius: 999px; min-width: 38px; transition: background .25s, color .25s; }
   .lang button[aria-pressed="true"] { background: #fff; color: var(--rani); box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-  .lang button:focus-visible, .music:focus-visible, ..btn:focus-visible, .replay:focus-visible { outline: 2px solid var(--rani); outline-offset: 2px; }
+  .lang button:focus-visible, .music:focus-visible, .btn:focus-visible, .replay:focus-visible { outline: 2px solid var(--rani); outline-offset: 2px; }
   .music { position: fixed; z-index: 40; right: 16px; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); width: 46px; height: 46px;
     border-radius: 50%; border: 1px solid rgba(255,255,255,.6); background: rgba(60,45,40,.45); color: #fff; cursor: pointer;
     display: grid; place-items: center; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); box-shadow: 0 6px 18px rgba(0,0,0,.18); }
@@ -259,7 +255,6 @@
     <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11V5a2 2 0 0 1 4 0v5"/><path d="M13 10V9a2 2 0 0 1 4 0v2"/><path d="M17 11a2 2 0 0 1 4 0v3a7 7 0 0 1-7 7h-1a7 7 0 0 1-5.6-2.8L4.2 14a2 2 0 0 1 3.1-2.5L9 13.5"/></svg></span>
     <span data-i18n="tap">Tap to open</span>
   </button>
-  <button class="skip" id="skip" data-i18n="skip">Skip intro</button>
 </div>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -485,7 +480,7 @@ const WEDDING = {
 /* ========================================================== */
 
 const T = {
-  en: { envTo: "For our dearest family & friends", tap: "Tap to open", skip: "Skip intro",
+  en: { envTo: "For our dearest family & friends", tap: "Tap to open",
     eyebrow: "We are getting married", groom: "Tushar", bride: "Shruti", tagline: "Join us as we take our seven pheras",
     when: "4 & 5 December 2026", scroll: "Scroll", kCount: "Counting down to forever",
     countLead: "We invite you to celebrate our wedding on the 4th and 5th of December 2026.",
@@ -493,7 +488,7 @@ const T = {
     kStory: "How it began", hStory: "Our <em>Story</em>", kProg: "The road to forever", hProg: "The <em>Program</em>", forever: "Happily ever after",
     kVenue: "Where it happens", hVenue: "The <em>Venue</em>", map: "Get directions", cal: "Save the date",
     closing: "Your presence and blessings will make our day complete.", family: "With love · The Soni Family", replay: "Open the invitation again" },
-  hi: { envTo: "हमारे प्रिय परिवार और मित्रों के लिए", tap: "खोलने के लिए छुएँ", skip: "आगे बढ़ें",
+  hi: { envTo: "हमारे प्रिय परिवार और मित्रों के लिए", tap: "खोलने के लिए छुएँ",
     eyebrow: "॥ शुभ विवाह ॥", groom: "तुषार", bride: "श्रुति", tagline: "हमारे सात फेरों के पावन अवसर पर आप सादर आमंत्रित हैं",
     when: "4 और 5 दिसंबर 2026", scroll: "नीचे", kCount: "शुभ घड़ी की प्रतीक्षा",
     countLead: "4 और 5 दिसंबर 2026 को हमारे विवाह समारोह में आप सादर आमंत्रित हैं।",
@@ -897,8 +892,7 @@ const T = {
     later(() => intro.classList.add("lift"), 950);
     later(reveal, 2200);
   }
-  intro.addEventListener("click", e => { if (!e.target.closest(".skip")) open(true); });
-  $("skip").addEventListener("click", e => { e.stopPropagation(); intro.classList.add("open", "behind", "lift"); reveal(); });
+  intro.addEventListener("click", () => open(true));
   $("replay").addEventListener("click", () => {
     scrollTo(0, 0); intro.hidden = false; intro.classList.remove("open", "gone", "behind", "lift");
     document.body.classList.add("pre", "locked"); Walk.reset();
